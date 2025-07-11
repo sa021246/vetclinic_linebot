@@ -4,4 +4,3 @@ requests
 python-dotenv
 matplotlib
 
-fix: remove conflict markers from requirements.txt
