@@ -1,91 +1,84 @@
 import os
 from flask import Flask, request, abort
-<<<<<<< HEAD
-from linebot.v3.webhook import WebhookHandler
-from linebot.v3.messaging import MessagingApi, ApiClient, Configuration
+from linebot.v3 import WebhookHandler, LineBotApi
 from linebot.v3.exceptions import InvalidSignatureError
-from linebot.v3.models import TextMessage, MessageEvent
-
+from linebot.v3.models import MessageEvent, TextMessage, TextSendMessage, ImageSendMessage
+import requests
+import matplotlib.pyplot as plt
 from dotenv import load_dotenv
+import datetime
 
 load_dotenv()
 
 app = Flask(__name__)
 
-# 從環境變數讀取
-CHANNEL_SECRET = os.getenv("CHANNEL_SECRET")
 CHANNEL_ACCESS_TOKEN = os.getenv("CHANNEL_ACCESS_TOKEN")
+CHANNEL_SECRET = os.getenv("CHANNEL_SECRET")
 
-if not CHANNEL_SECRET or not CHANNEL_ACCESS_TOKEN:
-    print("Missing CHANNEL_SECRET or CHANNEL_ACCESS_TOKEN!")
-    exit(1)
-=======
-from linebot import LineBotApi, WebhookHandler
-from linebot.exceptions import InvalidSignatureError
-from linebot.models import MessageEvent, TextMessage, TextSendMessage
-
-app = Flask(__name__)
-
-# 用環境變數讀取 token 和 secret
-CHANNEL_ACCESS_TOKEN = os.environ.get("CHANNEL_ACCESS_TOKEN")
-CHANNEL_SECRET = os.environ.get("CHANNEL_SECRET")
->>>>>>> 672ba74 (fix: upgrade to line-bot-sdk v3)
-
-# 初始化 LINE bot SDK
+line_bot_api = LineBotApi(CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
-configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
 
-<<<<<<< HEAD
-@app.route("/callback", methods=['POST'])
-=======
-@app.route("/")
-def home():
-    return "Hello, Railway is running!"
 
 @app.route("/callback", methods=["POST"])
->>>>>>> 672ba74 (fix: upgrade to line-bot-sdk v3)
 def callback():
-    signature = request.headers.get('X-Line-Signature')
-
+    signature = request.headers["X-Line-Signature"]
     body = request.get_data(as_text=True)
-<<<<<<< HEAD
-    app.logger.info("Request body: " + body)
-=======
->>>>>>> 672ba74 (fix: upgrade to line-bot-sdk v3)
-
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
         abort(400)
-<<<<<<< HEAD
-
-    return 'OK'
-
-@handler.add(MessageEvent, message=TextMessage)
-def handle_message(event):
-    text = event.message.text
-
-    with ApiClient(configuration) as api_client:
-        line_bot_api = MessagingApi(api_client)
-        line_bot_api.reply_message(
-            reply_token=event.reply_token,
-            messages=[TextMessage(text=f"你說的是: {text}")]
-        )
-=======
-
     return "OK"
 
+
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    user_message = event.message.text
-    reply_message = f"你說的是：{user_message}"
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text=reply_message)
-    )
->>>>>>> 672ba74 (fix: upgrade to line-bot-sdk v3)
+    user_message = event.message.text.strip()
+
+    if user_message == "USD/JPY":
+        api_url = "https://open.er-api.com/v6/latest/USD"
+        response = requests.get(api_url)
+        data = response.json()
+        jpy_rate = data["rates"]["JPY"]
+        reply_text = f"💹 當前 USD/JPY 匯率: {jpy_rate:.2f}"
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=reply_text)
+        )
+
+    elif user_message == "USD/JPY圖表":
+        api_url = "https://open.er-api.com/v6/latest/USD"
+        response = requests.get(api_url)
+        data = response.json()
+        jpy_rate = data["rates"]["JPY"]
+
+        dates = [(datetime.datetime.now() - datetime.timedelta(days=i)).strftime("%m-%d") for i in range(5, 0, -1)]
+        rates = [jpy_rate - i * 0.1 for i in range(5)]  # 模擬過去5天資料
+
+        plt.figure()
+        plt.plot(dates, rates, marker="o")
+        plt.title("USD/JPY 過去5日趨勢 (模擬數據)")
+        plt.xlabel("日期")
+        plt.ylabel("匯率")
+        plt.grid(True)
+        img_path = "usd_jpy_trend.png"
+        plt.savefig(img_path)
+        plt.close()
+
+        image_message = ImageSendMessage(
+            original_content_url=f"{request.host_url}{img_path}",
+            preview_image_url=f"{request.host_url}{img_path}"
+        )
+        line_bot_api.reply_message(
+            event.reply_token,
+            image_message
+        )
+    else:
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="請輸入 'USD/JPY' 或 'USD/JPY圖表' 來查詢匯率或圖表 📈")
+        )
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
