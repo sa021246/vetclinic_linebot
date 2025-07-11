@@ -1,30 +1,26 @@
 import os
 from flask import Flask, request, abort
-from linebot.v3 import WebhookParser, Configuration, MessagingApiClient
+from linebot.v3 import WebhookParser
 from linebot.v3.exceptions import InvalidSignatureError
+from linebot.v3.messaging import MessagingApiClient, TextMessage
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
-from linebot.v3.messaging.models import TextMessage
-
 from dotenv import load_dotenv
 
 load_dotenv()
 
 app = Flask(__name__)
 
-# LINE Channel access settings
-CHANNEL_ACCESS_TOKEN = os.getenv('CHANNEL_ACCESS_TOKEN')
-CHANNEL_SECRET = os.getenv('CHANNEL_SECRET')
+LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
+LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 
-configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
-parser = WebhookParser(CHANNEL_SECRET)
-line_bot_api = MessagingApiClient(configuration)
+parser = WebhookParser(LINE_CHANNEL_SECRET)
+client = MessagingApiClient(LINE_CHANNEL_ACCESS_TOKEN)
+
 
 @app.route("/callback", methods=['POST'])
 def callback():
-    signature = request.headers.get('X-Line-Signature')
-
+    signature = request.headers.get('X-Line-Signature', '')
     body = request.get_data(as_text=True)
-    app.logger.info("Request body: " + body)
 
     try:
         events = parser.parse(body, signature)
@@ -33,15 +29,24 @@ def callback():
 
     for event in events:
         if isinstance(event, MessageEvent) and isinstance(event.message, TextMessageContent):
-            message_text = event.message.text
-            line_bot_api.reply_message(
-                event.reply_token,
-                [
-                    TextMessage(text=f"You said: {message_text}")
-                ]
-            )
+            handle_message(event)
 
     return 'OK'
 
+
+def handle_message(event):
+    user_id = event.source.user_id
+    received_text = event.message.text
+
+    reply_text = f"你說的是：{received_text}"
+
+    client.reply_message(
+        event.reply_token,
+        [
+            TextMessage(text=reply_text)
+        ]
+    )
+
+
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
