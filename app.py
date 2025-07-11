@@ -1,5 +1,6 @@
 import os
 from flask import Flask, request, abort
+<<<<<<< HEAD
 from linebot.v3.webhook import WebhookHandler
 from linebot.v3.messaging import MessagingApi, ApiClient, Configuration
 from linebot.v3.exceptions import InvalidSignatureError
@@ -18,22 +19,45 @@ CHANNEL_ACCESS_TOKEN = os.getenv("CHANNEL_ACCESS_TOKEN")
 if not CHANNEL_SECRET or not CHANNEL_ACCESS_TOKEN:
     print("Missing CHANNEL_SECRET or CHANNEL_ACCESS_TOKEN!")
     exit(1)
+=======
+from linebot import LineBotApi, WebhookHandler
+from linebot.exceptions import InvalidSignatureError
+from linebot.models import MessageEvent, TextMessage, TextSendMessage
+
+app = Flask(__name__)
+
+# 用環境變數讀取 token 和 secret
+CHANNEL_ACCESS_TOKEN = os.environ.get("CHANNEL_ACCESS_TOKEN")
+CHANNEL_SECRET = os.environ.get("CHANNEL_SECRET")
+>>>>>>> 672ba74 (fix: upgrade to line-bot-sdk v3)
 
 # 初始化 LINE bot SDK
 handler = WebhookHandler(CHANNEL_SECRET)
 configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
 
+<<<<<<< HEAD
 @app.route("/callback", methods=['POST'])
+=======
+@app.route("/")
+def home():
+    return "Hello, Railway is running!"
+
+@app.route("/callback", methods=["POST"])
+>>>>>>> 672ba74 (fix: upgrade to line-bot-sdk v3)
 def callback():
     signature = request.headers.get('X-Line-Signature')
 
     body = request.get_data(as_text=True)
+<<<<<<< HEAD
     app.logger.info("Request body: " + body)
+=======
+>>>>>>> 672ba74 (fix: upgrade to line-bot-sdk v3)
 
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
         abort(400)
+<<<<<<< HEAD
 
     return 'OK'
 
@@ -47,6 +71,19 @@ def handle_message(event):
             reply_token=event.reply_token,
             messages=[TextMessage(text=f"你說的是: {text}")]
         )
+=======
+
+    return "OK"
+
+@handler.add(MessageEvent, message=TextMessage)
+def handle_message(event):
+    user_message = event.message.text
+    reply_message = f"你說的是：{user_message}"
+    line_bot_api.reply_message(
+        event.reply_token,
+        TextSendMessage(text=reply_message)
+    )
+>>>>>>> 672ba74 (fix: upgrade to line-bot-sdk v3)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
