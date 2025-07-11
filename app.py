@@ -1,44 +1,40 @@
-import os
 from flask import Flask, request, abort
-from linebot.v3 import WebhookParser
+from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging import MessagingApiClient, ReplyMessageRequest, TextMessage
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
-from dotenv import load_dotenv
-
-load_dotenv()
 
 app = Flask(__name__)
 
-CHANNEL_ACCESS_TOKEN = os.getenv("CHANNEL_ACCESS_TOKEN")
-CHANNEL_SECRET = os.getenv("CHANNEL_SECRET")
+# LINE Channel Access Token 和 Channel Secret
+CHANNEL_ACCESS_TOKEN = 'YOUR_CHANNEL_ACCESS_TOKEN'
+CHANNEL_SECRET = 'YOUR_CHANNEL_SECRET'
 
-if not CHANNEL_ACCESS_TOKEN or not CHANNEL_SECRET:
-    raise Exception("Missing CHANNEL_ACCESS_TOKEN or CHANNEL_SECRET!")
-
-line_bot_api = MessagingApiClient(CHANNEL_ACCESS_TOKEN)
-parser = WebhookParser(CHANNEL_SECRET)
+handler = WebhookHandler(CHANNEL_SECRET)
+messaging_api = MessagingApiClient(channel_access_token=CHANNEL_ACCESS_TOKEN)
 
 @app.route("/callback", methods=['POST'])
 def callback():
-    signature = request.headers.get('X-Line-Signature', '')
+    signature = request.headers.get('X-Line-Signature')
     body = request.get_data(as_text=True)
 
     try:
-        events = parser.parse(body, signature)
+        handler.handle(body, signature)
     except InvalidSignatureError:
         abort(400)
 
-    for event in events:
-        if isinstance(event, MessageEvent) and isinstance(event.message, TextMessageContent):
-            line_bot_api.reply_message(
-                ReplyMessageRequest(
-                    reply_token=event.reply_token,
-                    messages=[TextMessage(text=f"你剛剛說了：{event.message.text}")]
-                )
-            )
-
     return 'OK'
+
+@handler.add(MessageEvent, message=TextMessageContent)
+def handle_message(event):
+    reply_token = event.reply_token
+    user_message = event.message.text
+
+    reply = ReplyMessageRequest(
+        reply_token=reply_token,
+        messages=[TextMessage(text=f'你說了：{user_message}')]
+    )
+    messaging_api.reply_message(reply)
 
 if __name__ == "__main__":
     app.run()
