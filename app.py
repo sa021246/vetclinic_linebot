@@ -36,9 +36,10 @@ def handle_message(event):
         # 直接回覆收到的內容
         line_bot_api.reply_message(
             ReplyMessageRequest(
-                reply_token=reply_token,
-                messages=[TextMessage(text=f"你說了：{user_message}")]
-            )
+                reply_token=event.reply_token,
+                messages=[TextMessage(text='你的訊息')]
+)
+
         )
     except Exception as e:
         print(f"Reply error: {e}")
