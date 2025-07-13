@@ -8,7 +8,7 @@
 
 4️⃣ Railway 會自動執行：
 ```
-python app.py
+ python vetclinic_demo_app.py
 ```
 
 5️⃣ 部署完成後，會有固定公開網址。
