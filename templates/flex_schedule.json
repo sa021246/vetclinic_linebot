@@ -1,0 +1,43 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jul 18 19:03:53 2025
+
+@author: andyb
+"""
+
+{
+  "type": "bubble",
+  "header": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [{
+      "type": "text",
+      "text": "營業時間",
+      "weight": "bold",
+      "size": "xl"
+    }]
+  },
+  "body": {
+    "type": "box",
+    "layout": "vertical",
+    "spacing": "md",
+    "contents": [
+      {
+        "type": "box",
+        "layout": "baseline",
+        "contents": [
+          { "type": "text", "text": "週二、週日", "size": "sm", "color": "#555555" },
+          { "type": "text", "text": "全天", "size": "sm", "color": "#111111", "align": "end" }
+        ]
+      },
+      {
+        "type": "box",
+        "layout": "baseline",
+        "contents": [
+          { "type": "text", "text": "週三、週五", "size": "sm", "color": "#555555" },
+          { "type": "text", "text": "晚診", "size": "sm", "color": "#111111", "align": "end" }
+        ]
+      }
+    ]
+  }
+}

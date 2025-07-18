@@ -1,0 +1,42 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jul 18 19:03:53 2025
+
+@author: andyb
+"""
+
+{
+  "type": "bubble",
+  "body": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "text",
+        "text": "正式版下載",
+        "weight": "bold",
+        "size": "xl"
+      },
+      {
+        "type": "text",
+        "text": "感謝您的匯款！請點擊以下下載正式版資料。",
+        "wrap": true,
+        "margin": "md"
+      }
+    ]
+  },
+  "footer": {
+    "type": "box",
+    "layout": "vertical",
+    "spacing": "sm",
+    "contents": [{
+      "type": "button",
+      "style": "primary",
+      "action": {
+        "type": "uri",
+        "label": "下載資料",
+        "uri": "https://your-website.com/download.zip"
+      }
+    }]
+  }
+}
