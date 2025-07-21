@@ -1,25 +1,20 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Jul 18 19:03:53 2025
-
-@author: andyb
-"""
-
 {
   "type": "bubble",
   "header": {
     "type": "box",
     "layout": "vertical",
-    "contents": [{
-      "type": "text",
-      "text": "醫師班表",
-      "weight": "bold",
-      "size": "xl"
-    }]
+    "contents": [
+      {
+        "type": "text",
+        "text": "醫師班表",
+        "weight": "bold",
+        "size": "xl"
+      }
+    ]
   },
   "hero": {
     "type": "image",
-    "url": "https://your-image-url.com/doctor_schedule.jpg",
+    "url": "https://www.legendpet.com.tw/_i/assets/upload/images/509714080_1213591417447228_3187701018598124471_n.jpg",
     "size": "full",
     "aspectRatio": "20:13",
     "aspectMode": "cover"
@@ -27,25 +22,29 @@ Created on Fri Jul 18 19:03:53 2025
   "body": {
     "type": "box",
     "layout": "vertical",
-    "contents": [{
-      "type": "text",
-      "text": "查看完整班表請點下方連結",
-      "wrap": true
-    }]
+    "contents": [
+      {
+        "type": "text",
+        "text": "查看完整班表請點下方連結",
+        "wrap": true
+      }
+    ]
   },
   "footer": {
     "type": "box",
     "layout": "vertical",
     "spacing": "sm",
-    "contents": [{
-      "type": "button",
-      "style": "link",
-      "height": "sm",
-      "action": {
-        "type": "uri",
-        "label": "查看班表",
-        "uri": "https://your-website.com/schedule"
+    "contents": [
+      {
+        "type": "button",
+        "style": "link",
+        "height": "sm",
+        "action": {
+          "type": "uri",
+          "label": "查看班表",
+          "uri": "https://www.legendpet.com.tw/about_tw.php?id=12"
+        }
       }
-    }]
+    ]
   }
 }

@@ -1,8 +1,7 @@
 from flask import Flask, request, abort
-from linebot.v3 import WebhookHandler
-from linebot.v3.messaging import MessagingApiClient, ReplyMessageRequest, TextMessage, FlexMessage
-from linebot.v3.webhooks import MessageEvent, TextMessageContent
+from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
+from linebot.models import MessageEvent, TextMessage, TextSendMessage, FlexSendMessage
 from apscheduler.schedulers.background import BackgroundScheduler
 from dotenv import load_dotenv
 import os
@@ -14,16 +13,24 @@ load_dotenv()
 channel_secret = os.getenv('LINE_CHANNEL_SECRET')
 channel_access_token = os.getenv('LINE_CHANNEL_ACCESS_TOKEN')
 
-# LINE clients
+line_bot_api = LineBotApi(channel_access_token)
 handler = WebhookHandler(channel_secret)
-line_bot_api = MessagingApiClient(channel_access_token)
 
 app = Flask(__name__)
 
 # Load customers data
 def load_customers():
-    with open('data/customers.json', 'r') as f:
-        return json.load(f)
+    try:
+        with open('data/customers.json', 'r') as f:
+            data = json.load(f)
+            if not isinstance(data, dict):
+                print("Warning: customers.json is not a dictionary, resetting.")
+                return {}
+            return data
+    except (FileNotFoundError, json.JSONDecodeError):
+        print("Warning: customers.json not found or bad format, resetting.")
+        return {}
+
 
 def is_trial_active(start_date_str):
     start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
@@ -37,8 +44,8 @@ def daily_broadcast():
         if is_trial_active(info['start_date']) or info['is_paid']:
             try:
                 line_bot_api.push_message(
-                    to=user_id,
-                    messages=[TextMessage(text="🐾 今日營業提醒：週二、週日 全天 / 週三、週五 晚診")]
+                    user_id,
+                    TextSendMessage(text="🐾 今日營業提醒：週二、週日 全天 / 週三、週五 晚診")
                 )
                 print(f"已推播至 {user_id}")
             except Exception as e:
@@ -61,7 +68,7 @@ def callback():
 
     return 'OK'
 
-@handler.add(MessageEvent, message=TextMessageContent)
+@handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     user_id = event.source.user_id
     customers = load_customers()
@@ -70,12 +77,7 @@ def handle_message(event):
     if customer:
         if not is_trial_active(customer['start_date']) and not customer['is_paid']:
             reply_text = "試用已到期，請聯繫我們續約。"
-            line_bot_api.reply_message(
-                ReplyMessageRequest(
-                    reply_token=event.reply_token,
-                    messages=[TextMessage(text=reply_text)]
-                )
-            )
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             return
 
         user_msg = event.message.text.lower()
@@ -85,10 +87,8 @@ def handle_message(event):
             with open('templates/flex_schedule.json', 'r', encoding='utf-8') as f:
                 flex_content = json.load(f)
             line_bot_api.reply_message(
-                ReplyMessageRequest(
-                    reply_token=event.reply_token,
-                    messages=[FlexMessage(alt_text="營業時間", contents=flex_content)]
-                )
+                event.reply_token,
+                FlexSendMessage(alt_text="營業時間", contents=flex_content)
             )
             return
 
@@ -97,32 +97,47 @@ def handle_message(event):
             with open('templates/flex_doctor.json', 'r', encoding='utf-8') as f:
                 flex_content = json.load(f)
             line_bot_api.reply_message(
-                ReplyMessageRequest(
-                    reply_token=event.reply_token,
-                    messages=[FlexMessage(alt_text="醫師班表", contents=flex_content)]
-                )
+                event.reply_token,
+                FlexSendMessage(alt_text="醫師班表", contents=flex_content)
             )
             return
 
         # 下載正式版 Flex
         elif '下載' in user_msg:
             if customer['is_paid']:
-                with open('templates/flex_download.json', 'r', encoding='utf-8') as f:
-                    flex_content = json.load(f)
-                line_bot_api.reply_message(
-                    ReplyMessageRequest(
-                        reply_token=event.reply_token,
-                        messages=[FlexMessage(alt_text="正式版下載", contents=flex_content)]
+                download_link = customer.get('download_link', '')
+                if download_link:
+                    flex_content = {
+                        "type": "bubble",
+                        "body": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                { "type": "text", "text": "正式版下載", "weight": "bold", "size": "xl" },
+                                { "type": "text", "text": "感謝您的匯款！請點擊以下下載正式版資料。", "wrap": True, "margin": "md" }
+                            ]
+                        },
+                        "footer": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "spacing": "sm",
+                            "contents": [ {
+                                "type": "button",
+                                "style": "primary",
+                                "action": { "type": "uri", "label": "下載資料", "uri": download_link }
+                            } ]
+                        }
+                    }
+                    line_bot_api.reply_message(
+                        event.reply_token,
+                        FlexSendMessage(alt_text="正式版下載", contents=flex_content)
                     )
-                )
+                else:
+                    reply_text = "尚未配置下載連結，請聯繫客服。"
+                    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             else:
                 reply_text = "請先完成匯款以獲取下載連結。"
-                line_bot_api.reply_message(
-                    ReplyMessageRequest(
-                        reply_token=event.reply_token,
-                        messages=[TextMessage(text=reply_text)]
-                    )
-                )
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
             return
 
         # FAQ 預設文字回覆
@@ -133,12 +148,7 @@ def handle_message(event):
     else:
         reply_text = "您好！您尚未啟用服務，請聯繫我們。"
 
-    line_bot_api.reply_message(
-        ReplyMessageRequest(
-            reply_token=event.reply_token,
-            messages=[TextMessage(text=reply_text)]
-        )
-    )
+    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))

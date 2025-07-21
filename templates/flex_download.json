@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Jul 18 19:03:53 2025
-
-@author: andyb
-"""
-
 {
   "type": "bubble",
   "body": {
@@ -29,14 +22,17 @@ Created on Fri Jul 18 19:03:53 2025
     "type": "box",
     "layout": "vertical",
     "spacing": "sm",
-    "contents": [{
-      "type": "button",
-      "style": "primary",
-      "action": {
-        "type": "uri",
-        "label": "下載資料",
-        "uri": "https://your-website.com/download.zip"
+    "contents": [
+      {
+        "type": "button",
+        "style": "primary",
+        "action": {
+          "type": "uri",
+          "label": "下載資料",
+          "uri": "https://example.com"
+        }
       }
-    }]
+    ]
   }
 }
+
