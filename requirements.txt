@@ -1,7 +1,9 @@
-flask
+Flask==2.2.5
+python-dotenv==1.0.0
 line-bot-sdk==2.4.1
-python-dotenv
-apscheduler
+aiohttp==3.8.3
+apscheduler==3.10.4
+
 
 
 
