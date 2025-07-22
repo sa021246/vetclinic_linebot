@@ -1,18 +1,15 @@
-@echo off宣告目標資料夾
+@echo off
 cd /d %~dp0
-echo --------------------------
-echo Git status
-git status
-
 echo --------------------------
 echo Git add .
 git add .
 
 echo --------------------------
-git commit -m "update requirements.txt"
-
+echo Git commit
+git commit -m "fix: lock aiohttp version"
 
 echo --------------------------
+echo Git push
 git push origin main
 
 echo --------------------------
